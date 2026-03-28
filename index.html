@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="wither">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ModTracker - Modrinth Update Tracker</title>
+  <link rel="stylesheet" href="styles.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <script src="backgrounds.js"></script>
+  <script>
+    // 1. Theme Logic
+    (function () {
+      const savedTheme = localStorage.getItem("tswitch-theme");
+      if (savedTheme) {
+        document.documentElement.dataset.theme = savedTheme;
+      } else {
+        const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+        document.documentElement.dataset.theme = prefersDark ? 'wither' : 'snow';
+      }
+
+      // 2. Background Logic (Random on Reload)
+      const isRandom = localStorage.getItem('custom-bg-random') !== 'false';
+      let bgImg = localStorage.getItem('custom-bg-image');
+      let isTiled = localStorage.getItem('custom-bg-tiled') === 'true';
+      let isPixelated = localStorage.getItem('custom-bg-pixelated') === 'true';
+
+      if (isRandom) {
+        const pool = [];
+        const includeWallpapers = localStorage.getItem('custom-bg-include-wallpapers') !== 'false';
+        const includePaintings = localStorage.getItem('custom-bg-include-paintings') === 'true';
+        const includeBlocks = localStorage.getItem('custom-bg-include-blocks') === 'true';
+
+        if (includeWallpapers && typeof BACKGROUND_IMAGES !== 'undefined') {
+          BACKGROUND_IMAGES.forEach(s => pool.push({ s, tiled: false, pixelated: false }));
+        }
+        if (includePaintings && typeof PAINTING_IMAGES !== 'undefined') {
+          PAINTING_IMAGES.forEach(s => pool.push({ s, tiled: false, pixelated: true }));
+        }
+        if (includeBlocks && typeof BLOCK_IMAGES !== 'undefined') {
+          BLOCK_IMAGES.forEach(s => pool.push({ s, tiled: true, pixelated: true }));
+        }
+
+        if (pool.length > 0) {
+          const choice = pool[Math.floor(Math.random() * pool.length)];
+          bgImg = choice.s;
+          isTiled = choice.tiled;
+          isPixelated = choice.pixelated;
+
+          try {
+            localStorage.setItem('custom-bg-image', bgImg);
+            localStorage.setItem('custom-bg-tiled', isTiled);
+            localStorage.setItem('custom-bg-pixelated', isPixelated);
+          } catch (e) { }
+        }
+      }
+
+      if (bgImg && bgImg !== 'null') {
+        const style = document.createElement('style');
+        style.innerHTML = `
+          body { 
+            background-image: url("${bgImg}") !important;
+          }
+          body.has-custom-bg { display: block; } 
+        `;
+        document.head.appendChild(style);
+        // We'll add the classes in a script that runs as soon as body exists
+        const observer = new MutationObserver(() => {
+          if (document.body) {
+            document.body.classList.add('has-custom-bg');
+            if (isTiled) document.body.classList.add('tiled');
+            if (isPixelated) document.body.classList.add('pixelated-bg');
+            observer.disconnect();
+          }
+        });
+        observer.observe(document.documentElement, { childList: true });
+      }
+    })();
+  </script>
+</head>
+
+<body>
+
+
+  <div class="app-container">
+    <header>
+      <div class="logo">
+        <h1>ModTracker</h1>
+      </div>
+      <div class="controls">
+        <div class="select-wrapper">
+          <select id="mc-version" aria-label="Minecraft Version">
+            <option value="" disabled selected>Loading...</option>
+          </select>
+        </div>
+      </div>
+    </header>
+
+    <main class="content-grid">
+      <!-- Search Column -->
+      <section class="glass-panel">
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+          <h2>Find Mods</h2>
+        </div>
+        <div class="search-box">
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
+            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+            class="lucide lucide-search">
+            <circle cx="11" cy="11" r="8" />
+            <path d="m21 21-4.3-4.3" />
+          </svg>
+          <input type="text" id="mod-search" placeholder="Search Modrinth..." autocomplete="off">
+        </div>
+        <div id="search-results" class="results-container">
+          <div class="empty-state">Type to search for mods</div>
+        </div>
+      </section>
+
+      <!-- Tracking Column -->
+      <section class="glass-panel">
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+          <h2>Tracked Mods</h2>
+          <div style="display: flex; gap: 10px; align-items: center;">
+            <div id="optimal-version" class="optimal-badge"></div>
+            <div id="status-summary" class="status-summary">0 / 0 Updated</div>
+          </div>
+        </div>
+        <div id="tracked-list" class="tracked-list">
+          <div class="empty-state">No mods tracked yet</div>
+        </div>
+      </section>
+    </main>
+
+    <footer class="glass-panel" style="margin-top: 2rem;">
+      <div class="footer-inner">
+        <div class="theme-controls">
+          <form id="theme-switcher-form">
+            <div class="theme-option">
+              <input type="radio" id="snow-theme" name="theme-choice" value="snow" />
+              <label for="snow-theme" title="Snow Theme"></label>
+            </div>
+            <div class="theme-option">
+              <input type="radio" id="stone-theme" name="theme-choice" value="stone" />
+              <label for="stone-theme" title="Stone Theme"></label>
+            </div>
+            <div class="theme-option">
+              <input type="radio" id="wither-theme" name="theme-choice" value="wither" />
+              <label for="wither-theme" title="Wither Theme"></label>
+            </div>
+          </form>
+        </div>
+
+        <div class="footer-actions">
+          <button id="open-gallery-btn" class="footer-btn" title="Background Gallery">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
+              <circle cx="8.5" cy="8.5" r="1.5" />
+              <polyline points="21 15 16 10 5 21" />
+            </svg>
+            Backgrounds
+          </button>
+        </div>
+      </div>
+    </footer>
+  </div>
+
+  <div id="bg-gallery-modal" class="modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2 style="margin:0;">Choose Background</h2>
+        <span class="close-btn" id="close-gallery-btn">&times;</span>
+      </div>
+      <div class="gallery-grid" id="gallery-grid">
+        <!-- Backgrounds populated by backgrounds.js -->
+      </div>
+      <div class="gallery-footer"
+        style="display: flex; justify-content: space-between; align-items: center; padding: 15px 25px;">
+        <div style="display: flex; gap: 10px; align-items: center;">
+          <label for="bg-image-input" class="upload-btn">Upload Custom Background...</label>
+          <div class="gallery-filter-group">
+            <button id="filter-wallpapers" class="filter-btn active" title="Toggle Wallpapers">
+              <svg viewBox="0 0 24 24" fill="currentColor" width="16" height="16">
+                <path
+                  d="M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z" />
+              </svg>
+            </button>
+            <button id="filter-paintings" class="filter-btn active" title="Toggle Paintings">
+              <svg viewBox="0 0 24 24" fill="currentColor" width="16" height="16">
+                <path
+                  d="M12 3c-4.97 0-9 4.03-9 9s4.03 9 9 9c.83 0 1.5-.67 1.5-1.5 0-.39-.15-.74-.39-1.01-.23-.26-.38-.61-.38-.99 0-.83.67-1.5 1.5-1.5H16c2.76 0 5-2.24 5-5 0-4.42-4.03-8-9-8zm-5.5 9c-.83 0-1.5-.67-1.5-1.5S5.67 9 6.5 9s1.5.67 1.5 1.5S7.33 12 6.5 12zm3-4C8.67 8 8 7.33 8 6.5S8.67 5 9.5 5s1.5.67 1.5 1.5S10.33 8 9.5 8zm5 0c-.83 0-1.5-.67-1.5-1.5S13.67 5 14.5 5s1.5.67 1.5 1.5S15.33 8 14.5 8zm3 4c-.83 0-1.5-.67-1.5-1.5S16.67 9 17.5 9s1.5.67 1.5 1.5-.67 1.5-1.5 1.5z" />
+              </svg>
+            </button>
+            <button id="filter-blocks" class="filter-btn active" title="Toggle Blocks">
+              <svg viewBox="0 0 24 24" fill="currentColor" width="16" height="16">
+                <path
+                  d="M21 16.5c0 .38-.21.71-.53.88l-7.97 4.41c-.32.17-.69.17-1 0l-7.97-4.41c-.32-.17-.53-.5-.53-.88V7.5c0-.38.21-.71.53-.88l7.97-4.41c.32-.17.69-.17 1 0l7.97 4.41c.32.17.53.5.53.88v9z" />
+              </svg>
+            </button>
+          </div>
+          <button id="random-bg-toggle" class="gallery-toggle-btn" title="Random on Reload">
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"
+              stroke-linecap="round" stroke-linejoin="round">
+              <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
+              <circle cx="8.5" cy="8.5" r="1" fill="currentColor" />
+              <circle cx="15.5" cy="8.5" r="1" fill="currentColor" />
+              <circle cx="15.5" cy="15.5" r="1" fill="currentColor" />
+              <circle cx="8.5" cy="15.5" r="1" fill="currentColor" />
+              <circle cx="12" cy="12" r="1" fill="currentColor" />
+            </svg>
+          </button>
+        </div>
+        <input type="file" id="bg-image-input" accept="image/*" style="display: none;">
+      </div>
+      <input type="file" id="bg-image-input" accept="image/*" style="display: none;">
+    </div>
+  </div>
+  </div>
+
+  <div id="gallery-custom-tooltip"></div>
+
+  <!-- Templates -->
+  <template id="search-result-template">
+    <div class="mod-card">
+      <img class="mod-icon" src="" alt="">
+      <div class="mod-info">
+        <h3 class="mod-title"></h3>
+        <p class="mod-author"></p>
+      </div>
+      <button class="add-button" title="Add to track list">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
+          stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+          class="lucide lucide-plus">
+          <path d="M5 12h14" />
+          <path d="M12 5v14" />
+        </svg>
+      </button>
+    </div>
+  </template>
+
+  <template id="tracked-mod-template">
+    <div class="tracked-card">
+      <img class="mod-icon" src="" alt="">
+      <div class="mod-info">
+        <div class="tracked-header">
+          <div class="header-left">
+            <h3 class="mod-title"></h3>
+            <div class="mod-meta-row">
+              <span class="mod-versions"></span>
+              <span class="mod-date"></span>
+            </div>
+          </div>
+          <span class="status-badge"></span>
+        </div>
+      </div>
+      <button class="remove-button" title="Stop tracking">
+        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
+          stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+          class="lucide lucide-trash-2">
+          <path d="M3 6h18" />
+          <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" />
+          <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" />
+          <line x1="10" y1="11" x2="10" y2="17" />
+          <line x1="14" y1="11" x2="14" y2="17" />
+        </svg>
+      </button>
+    </div>
+  </template>
+
+  <script src="app.js"></script>
+</body>
+
+</html>
