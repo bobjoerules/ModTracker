@@ -80,9 +80,10 @@ body {
   background-color: var(--bg-color);
   color: var(--text-primary);
   font-family: var(--font-main);
-  height: 100vh;
+  min-height: 100vh;
   margin: 0;
-  overflow: hidden;
+  overflow-x: hidden;
+  overflow-y: auto;
   position: relative;
   line-height: 1.5;
 }
@@ -135,8 +136,15 @@ body.has-custom-bg .version-label {
   padding: 1.5rem 2rem;
   display: flex;
   flex-direction: column;
-  height: 100vh;
+  min-height: 100vh;
   gap: 1rem;
+}
+
+@media (max-width: 768px) {
+  .app-container {
+    padding: 1rem 1rem 5rem;
+    height: auto;
+  }
 }
 
 header {
@@ -241,9 +249,32 @@ select option {
   min-height: 0;
 }
 
-@media (max-width: 768px) {
+@media (max-width: 1024px) {
   .content-grid {
     grid-template-columns: 1fr;
+    height: auto;
+    overflow: visible;
+  }
+  .content-grid > .glass-panel {
+    height: auto;
+    max-height: 600px; /* Still allow scrolling within panels if they get huge */
+  }
+}
+
+@media (max-width: 600px) {
+  .content-grid > .glass-panel {
+    max-height: none; /* Let them grow fully on small mobile */
+  }
+  header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  .controls {
+    width: 100%;
+    flex-wrap: wrap;
+  }
+  .select-wrapper, select {
+    width: 100%;
   }
 }
 
@@ -915,7 +946,14 @@ footer.glass-panel {
 
 .timeline-modal-content {
   max-width: 1000px;
+  width: 95%; /* More width on narrow screens */
   background: var(--modal-surface);
+}
+
+@media (max-width: 600px) {
+  .timeline-container {
+    padding: 1rem;
+  }
 }
 
 .timeline-container {
