@@ -246,11 +246,40 @@ function initBackgroundGallery() {
   const isRandom = localStorage.getItem('custom-bg-random') !== 'false';
   if (isRandom) randomToggle.classList.add('active');
 
+  function randomizeBackground() {
+    const pool = [];
+    const includeWallpapers = localStorage.getItem('custom-bg-include-wallpapers') !== 'false';
+    const includePaintings = localStorage.getItem('custom-bg-include-paintings') !== 'false';
+    const includeBlocks = localStorage.getItem('custom-bg-include-blocks') !== 'false';
+
+    if (includeWallpapers && typeof BACKGROUND_IMAGES !== 'undefined') {
+      BACKGROUND_IMAGES.forEach(s => pool.push({ s, tiled: false, pixelated: false }));
+    }
+    if (includePaintings && typeof PAINTING_IMAGES !== 'undefined') {
+      PAINTING_IMAGES.forEach(s => pool.push({ s, tiled: false, pixelated: true }));
+    }
+    if (includeBlocks && typeof BLOCK_IMAGES !== 'undefined') {
+      BLOCK_IMAGES.forEach(s => pool.push({ s, tiled: true, pixelated: true }));
+    }
+
+    if (pool.length > 0) {
+      const choice = pool[Math.floor(Math.random() * pool.length)];
+      applyBackground(choice.s, choice.tiled, choice.pixelated);
+      localStorage.setItem('custom-bg-image', choice.s);
+      localStorage.setItem('custom-bg-tiled', choice.tiled);
+      localStorage.setItem('custom-bg-pixelated', choice.pixelated);
+    }
+  }
+
   randomToggle.onclick = () => {
     const currentState = localStorage.getItem('custom-bg-random') !== 'false';
     const newState = !currentState;
     localStorage.setItem('custom-bg-random', newState);
     randomToggle.classList.toggle('active', newState);
+    if (newState) {
+      randomizeBackground();
+      renderGallery();
+    }
   };
 
   ['wallpapers', 'paintings', 'blocks'].forEach(key => {
@@ -261,6 +290,9 @@ function initBackgroundGallery() {
       const state = localStorage.getItem(`custom-bg-include-${key}`) !== 'false';
       localStorage.setItem(`custom-bg-include-${key}`, !state);
       btn.classList.toggle('active', !state);
+      if (localStorage.getItem('custom-bg-random') !== 'false') {
+        randomizeBackground();
+      }
       renderGallery();
     };
   });

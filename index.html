@@ -32,8 +32,8 @@
       if (isRandom) {
         const pool = [];
         const includeWallpapers = localStorage.getItem('custom-bg-include-wallpapers') !== 'false';
-        const includePaintings = localStorage.getItem('custom-bg-include-paintings') === 'true';
-        const includeBlocks = localStorage.getItem('custom-bg-include-blocks') === 'true';
+        const includePaintings = localStorage.getItem('custom-bg-include-paintings') !== 'false';
+        const includeBlocks = localStorage.getItem('custom-bg-include-blocks') !== 'false';
 
         if (includeWallpapers && typeof BACKGROUND_IMAGES !== 'undefined') {
           BACKGROUND_IMAGES.forEach(s => pool.push({ s, tiled: false, pixelated: false }));
