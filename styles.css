@@ -202,6 +202,18 @@ select option {
   color: var(--text-primary);
 }
 
+.sort-wrapper select {
+  padding: 0.35rem 1.75rem 0.35rem 0.5rem;
+  font-size: 0.8rem;
+  min-width: 120px;
+}
+
+.sort-wrapper::after {
+  right: 0.6rem;
+  width: 4px;
+  height: 4px;
+}
+
 .select-wrapper::after {
   content: '';
   position: absolute;
@@ -371,6 +383,7 @@ select option {
 }
 
 .mod-author,
+.mod-stats,
 .mod-type,
 .mod-versions,
 .mod-date {
@@ -379,35 +392,28 @@ select option {
   white-space: nowrap;
 }
 
+.mod-meta-row > *:not(:first-child)::before {
+  content: '•';
+  margin-right: 8px;
+  color: var(--text-secondary);
+  opacity: 0.5;
+  font-style: normal;
+}
+
 .mod-type {
   color: var(--accent);
   font-weight: 600;
 }
 
-.mod-versions::before {
-  content: '•';
-  margin-right: 12px;
-  opacity: 0.5;
-  font-style: normal;
-}
-
 .mod-meta-row {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 8px;
 }
 
 .mod-date {
-  font-size: 0.75rem;
-  font-style: italic;
-  opacity: 0.8;
-}
-
-.mod-date::before {
-  content: '•';
-  margin-right: 12px;
-  opacity: 0.5;
-  font-style: normal;
+  font-size: 0.8rem;
+  color: var(--text-secondary);
 }
 
 .mod-header {
@@ -569,6 +575,12 @@ footer.glass-panel {
   justify-content: space-between;
   align-items: center;
   padding: 1rem 1.5rem;
+}
+
+.footer-actions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
 }
 
 .theme-controls form {

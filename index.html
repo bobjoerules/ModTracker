@@ -120,7 +120,17 @@
 
       <section class="glass-panel">
         <div style="display: flex; justify-content: space-between; align-items: center;">
-          <h2>Tracked</h2>
+          <div style="display: flex; align-items: center; gap: 12px;">
+            <h2>Tracked</h2>
+            <div class="select-wrapper sort-wrapper">
+              <select id="tracked-sort" aria-label="Sort Order">
+                <option value="added">Date Added</option>
+                <option value="alphabetical">Name</option>
+                <option value="updated">Last Updated</option>
+                <option value="unsupported">Incompatible First</option>
+              </select>
+            </div>
+          </div>
           <div style="display: flex; gap: 10px; align-items: center;">
             <div id="optimal-version" class="optimal-badge"></div>
             <div id="status-summary" class="status-summary">0 / 0 Updated</div>
@@ -152,6 +162,23 @@
         </div>
 
         <div class="footer-actions">
+          <button id="export-btn" class="footer-btn" title="Export Tracked List">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+              <polyline points="7 10 12 15 17 10" />
+              <line x1="12" y1="15" x2="12" y2="3" />
+            </svg>
+            Export
+          </button>
+          <button id="import-btn" class="footer-btn" title="Import Tracked List">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+              <polyline points="17 8 12 3 7 8" />
+              <line x1="12" y1="3" x2="12" y2="15" />
+            </svg>
+            Import
+          </button>
+          <input type="file" id="import-input" accept=".json" style="display: none;">
           <button id="open-gallery-btn" class="footer-btn" title="Background Gallery">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
@@ -223,7 +250,11 @@
       <img class="mod-icon" src="" alt="">
       <div class="mod-info">
         <h3 class="mod-title"></h3>
-        <p class="mod-author"></p>
+        <div class="mod-meta-row">
+          <span class="mod-type"></span>
+          <span class="mod-author"></span>
+          <span class="mod-stats"></span>
+        </div>
       </div>
       <button class="add-button" title="Add to track list">
         <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"

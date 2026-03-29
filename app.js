@@ -45,6 +45,62 @@ async function init() {
 
   initThemeSwitcher();
   initBackgroundGallery();
+  initTrackedSort();
+  initExportImport();
+}
+
+function initExportImport() {
+  const exportBtn = document.getElementById('export-btn');
+  const importBtn = document.getElementById('import-btn');
+  const importInput = document.getElementById('import-input');
+
+  exportBtn.onclick = () => {
+    const data = JSON.stringify(trackedModIds, null, 2);
+    const blob = new Blob([data], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `modtracker-export-${new Date().toISOString().split('T')[0]}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  importBtn.onclick = () => importInput.click();
+
+  importInput.onchange = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = async (event) => {
+      try {
+        const ids = JSON.parse(event.target.result);
+        if (Array.isArray(ids)) {
+          // Merge and deduplicate
+          const newIds = [...new Set([...trackedModIds, ...ids])];
+          trackedModIds = newIds;
+          saveTrackedIds();
+          await refreshTrackedMods();
+        } else {
+          alert('Invalid file format. Please upload a valid JSON array of IDs.');
+        }
+      } catch (err) {
+        console.error(err);
+        alert('Failed to parse import file.');
+      }
+      importInput.value = '';
+    };
+    reader.readAsText(file);
+  };
+}
+
+function initTrackedSort() {
+  const sortSelect = document.getElementById('tracked-sort');
+  if (!sortSelect) return;
+  sortSelect.value = localStorage.getItem('modtracker_sort') || 'added';
+  sortSelect.addEventListener('change', (e) => {
+    localStorage.setItem('modtracker_sort', e.target.value);
+    renderTrackedMods();
+  });
 }
 
 // Themes
@@ -311,7 +367,11 @@ function renderSearchResults(hits) {
     img.src = hit.icon_url || 'https://cdn.modrinth.com/placeholder.svg';
     img.alt = hit.title;
     clone.querySelector('.mod-title').textContent = hit.title;
-    clone.querySelector('.mod-author').textContent = `${hit.author} • ${hit.project_type.charAt(0).toUpperCase() + hit.project_type.slice(1)}`;
+    const typeLabel = hit.project_type.charAt(0).toUpperCase() + hit.project_type.slice(1);
+    const downloads = hit.downloads ? hit.downloads.toLocaleString() : '0';
+    clone.querySelector('.mod-author').textContent = hit.author;
+    clone.querySelector('.mod-type').textContent = typeLabel;
+    clone.querySelector('.mod-stats').textContent = `${downloads} downloads`;
     const btn = clone.querySelector('.add-button');
     if (trackedModIds.includes(hit.project_id)) {
       btn.innerHTML = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"></polyline></svg>';
@@ -332,8 +392,34 @@ function renderTrackedMods() {
     updateSummary(0, 0);
     return;
   }
+
+  const sortMethod = localStorage.getItem('modtracker_sort') || 'added';
+  const displayIds = [...trackedModIds];
+
+  if (sortMethod !== 'added') {
+    displayIds.sort((a, b) => {
+      const pA = trackedModsCache[a];
+      const pB = trackedModsCache[b];
+      if (!pA || !pB) return 0;
+
+      switch (sortMethod) {
+        case 'alphabetical':
+          return pA.title.localeCompare(pB.title);
+        case 'updated':
+          return new Date(pB.updated || pB.date_modified) - new Date(pA.updated || pA.date_modified);
+        case 'unsupported':
+          const isACompatible = pA.game_versions.includes(targetVersion);
+          const isBCompatible = pB.game_versions.includes(targetVersion);
+          if (isACompatible === isBCompatible) return 0;
+          return isACompatible ? 1 : -1;
+        default:
+          return 0;
+      }
+    });
+  }
+
   let readyCount = 0;
-  trackedModIds.forEach(id => {
+  displayIds.forEach(id => {
     const project = trackedModsCache[id];
     if (!project) return;
     const clone = trackedTemplate.content.cloneNode(true);
