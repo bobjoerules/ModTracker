@@ -104,7 +104,9 @@ body.has-custom-bg .background-decor-blobs {
 }
 
 body.pixelated-bg {
+  image-rendering: crisp-edges;
   image-rendering: pixelated;
+  -ms-interpolation-mode: nearest-neighbor;
 }
 
 body.tiled {
