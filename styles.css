@@ -80,12 +80,20 @@ body {
   background-color: var(--bg-color);
   color: var(--text-primary);
   font-family: var(--font-main);
-  min-height: 100vh;
+  height: 100vh;
   margin: 0;
-  overflow-x: hidden;
-  overflow-y: auto;
+  overflow: hidden;
   position: relative;
   line-height: 1.5;
+}
+
+@media (max-width: 1024px) {
+  body {
+    height: auto;
+    min-height: 100vh;
+    overflow-x: hidden;
+    overflow-y: auto;
+  }
 }
 
 .background-decor-blobs {
@@ -138,14 +146,15 @@ body.has-custom-bg .version-label {
   padding: 1.5rem 2rem;
   display: flex;
   flex-direction: column;
-  min-height: 100vh;
+  height: 100vh;
   gap: 1rem;
 }
 
-@media (max-width: 768px) {
+@media (max-width: 1024px) {
   .app-container {
     padding: 1rem 1rem 5rem;
     height: auto;
+    min-height: 100vh;
   }
 }
 
@@ -812,7 +821,8 @@ footer.glass-panel {
 
 .gallery-none-card {
   grid-column: span 1;
-  display: flex !important;
+  display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
   background-color: var(--bg-secondary) !important;
@@ -897,7 +907,17 @@ footer.glass-panel {
 
 .gallery-section-title {
   grid-column: 1 / -1;
-  display: none;
+  font-size: 0.9rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--accent);
+  margin: 1.5rem 0 0.75rem 0;
+  opacity: 0.8;
+}
+
+.gallery-section-title:first-child {
+  margin-top: 0;
 }
 
 .gallery-footer {
