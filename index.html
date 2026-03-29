@@ -180,6 +180,14 @@
             Import
           </button>
           <input type="file" id="import-input" accept=".json" style="display: none;">
+          <button id="open-timeline-btn" class="footer-btn" title="Update Timeline">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <line x1="18" y1="20" x2="18" y2="10" />
+              <line x1="12" y1="20" x2="12" y2="4" />
+              <line x1="6" y1="20" x2="6" y2="14" />
+            </svg>
+            Timeline
+          </button>
           <button id="open-gallery-btn" class="footer-btn" title="Background Gallery">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
@@ -191,6 +199,20 @@
         </div>
       </div>
     </footer>
+  </div>
+
+  <div id="timeline-modal" class="modal">
+    <div class="modal-content timeline-modal-content">
+      <div class="modal-header">
+        <h2 id="timeline-title" style="margin:0;">Mod Update Timeline</h2>
+        <span class="close-btn" id="close-timeline-btn">&times;</span>
+      </div>
+      <div id="timeline-chart-container" class="timeline-container">
+      </div>
+      <div class="modal-footer" style="padding: 15px 25px; font-size: 0.9rem; color: var(--text-secondary);">
+        Timeline shows mod updates relative to Minecraft version release.
+      </div>
+    </div>
   </div>
 
   <div id="bg-gallery-modal" class="modal">

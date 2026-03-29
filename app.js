@@ -45,6 +45,7 @@ async function init() {
 
   initThemeSwitcher();
   initBackgroundGallery();
+  initTimeline();
   initTrackedSort();
   initExportImport();
 }
@@ -75,7 +76,6 @@ function initExportImport() {
       try {
         const ids = JSON.parse(event.target.result);
         if (Array.isArray(ids)) {
-          // Merge and deduplicate
           const newIds = [...new Set([...trackedModIds, ...ids])];
           trackedModIds = newIds;
           saveTrackedIds();
@@ -103,7 +103,6 @@ function initTrackedSort() {
   });
 }
 
-// Themes
 function initThemeSwitcher() {
   const themeInputs = document.querySelectorAll('input[name="theme-choice"]');
   const currentTheme = localStorage.getItem("tswitch-theme") || document.documentElement.dataset.theme || 'wither';
@@ -119,7 +118,6 @@ function initThemeSwitcher() {
   });
 }
 
-// Gallery
 function initBackgroundGallery() {
   const modal = document.getElementById('bg-gallery-modal');
   const openBtn = document.getElementById('open-gallery-btn');
@@ -129,7 +127,6 @@ function initBackgroundGallery() {
   const fileInput = document.getElementById('bg-image-input');
   const randomToggle = document.getElementById('random-bg-toggle');
 
-  // Modal controls
   openBtn.onclick = () => {
     modal.classList.add('active');
     renderGallery();
@@ -141,7 +138,6 @@ function initBackgroundGallery() {
     galleryGrid.innerHTML = '';
     const currentBg = localStorage.getItem('custom-bg-image');
 
-    // Section 1: None
     const noneItem = document.createElement('div');
     noneItem.className = `gallery-none-card ${(!currentBg || currentBg === 'null') ? 'active' : ''}`;
     noneItem.textContent = 'None';
@@ -304,7 +300,6 @@ function initBackgroundGallery() {
     };
   });
 
-  // Custom upload
   fileInput.onchange = (e) => {
     const file = e.target.files[0];
     if (file) {
@@ -315,7 +310,173 @@ function initBackgroundGallery() {
   };
 }
 
-// API Calls
+function initTimeline() {
+  const modal = document.getElementById('timeline-modal');
+  const openBtn = document.getElementById('open-timeline-btn');
+  const closeBtn = document.getElementById('close-timeline-btn');
+  const chartContainer = document.getElementById('timeline-chart-container');
+  const timelineTitle = document.getElementById('timeline-title');
+
+  if (!modal || !openBtn || !closeBtn) return;
+
+  openBtn.onclick = () => {
+    modal.classList.add('active');
+    renderTimeline();
+  };
+  closeBtn.onclick = () => modal.classList.remove('active');
+  window.addEventListener('click', (e) => { if (e.target === modal) modal.classList.remove('active'); });
+
+  function renderTimeline() {
+    chartContainer.innerHTML = '';
+
+    if (trackedModIds.length === 0) {
+      chartContainer.innerHTML = '<div class="empty-state">No items tracked. Search and add some content to see the timeline!</div>';
+      return;
+    }
+
+    const versionData = mcVersions.find(v => v.version === targetVersion);
+    const releaseDate = versionData ? new Date(versionData.date) : null;
+
+    if (!releaseDate) {
+      chartContainer.innerHTML = '<div class="empty-state">Minecraft version release data not available.</div>';
+      return;
+    }
+
+    timelineTitle.textContent = `Update Timeline (${targetVersion})`;
+
+    const modData = trackedModIds.map(id => {
+      const p = trackedModsCache[id];
+      if (!p) return null;
+      if (!p.game_versions.includes(targetVersion)) return null;
+
+      const updateDate = new Date(p.updated || p.date_modified);
+      const diffMs = updateDate - releaseDate;
+      const diffDays = diffMs / (1000 * 60 * 60 * 24);
+      return { title: p.title, icon_url: p.icon_url, diffDays, date: updateDate };
+    }).filter(d => d !== null);
+
+    if (modData.length === 0) {
+      chartContainer.innerHTML = `<div class="empty-state">None of your tracked items are updated for ${targetVersion} yet.</div>`;
+      return;
+    }
+
+    modData.sort((a, b) => a.diffDays - b.diffDays);
+
+    const today = new Date();
+    const todayDiffDays = Math.floor((today - releaseDate) / (1000 * 60 * 60 * 24));
+
+    const actualMin = Math.min(0, ...modData.map(d => d.diffDays));
+    const minDay = actualMin === 0 ? 0 : actualMin - 5;
+    const maxDay = Math.max(todayDiffDays, ...modData.map(d => d.diffDays));
+    const range = maxDay - minDay || 1;
+
+    const width = 900;
+    const chartHeight = 500;
+    const paddingLeft = 60;
+    const paddingRight = 60;
+    const timelineWidth = width - paddingLeft - paddingRight;
+
+    const getX = (day) => paddingLeft + ((day - minDay) / range) * timelineWidth;
+
+    const occupiedSlots = [];
+    const iconSize = 32;
+    const collisionWidth = 36;
+    const collisionHeight = 40;
+
+    modData.forEach(mod => {
+      const posX = getX(mod.diffDays);
+      let level = 0;
+      while (occupiedSlots.some(s => s.level === level && Math.abs(s.x - posX) < collisionWidth)) {
+        level++;
+      }
+      mod.x = posX;
+      mod.level = level;
+      occupiedSlots.push({ x: posX, level: level });
+    });
+
+    const maxLevel = Math.max(2, ...modData.map(d => d.level));
+    const dynamicChartHeight = maxLevel * collisionHeight + 200;
+
+    let svg = `<svg viewBox="0 0 ${width} ${dynamicChartHeight}" class="timeline-svg" xmlns="http://www.w3.org/2000/svg">`;
+
+    const mainY = dynamicChartHeight - 110;
+    svg += `<line x1="${paddingLeft}" y1="${mainY}" x2="${width - paddingRight}" y2="${mainY}" style="stroke: var(--border-glass); stroke-width: 4; stroke-linecap: round;" />`;
+
+    const stepLines = 6;
+    const stepVal = range / stepLines;
+    for (let i = 0; i <= stepLines; i++) {
+      const d = minDay + (stepVal * i);
+      const posX = getX(d);
+      svg += `<line x1="${posX}" y1="${mainY - 10}" x2="${posX}" y2="${mainY + 10}" style="stroke: var(--border-glass); stroke-width: 2;" />`;
+      svg += `<text x="${posX}" y="${mainY + 30}" class="timeline-axis-label" text-anchor="middle">${Math.round(d)}d</text>`;
+    }
+
+    const zeroX = getX(0);
+    svg += `<circle cx="${zeroX}" cy="${mainY}" r="8" fill="var(--accent)" />`;
+    svg += `<text x="${zeroX}" y="${mainY + 50}" class="timeline-zero-label" text-anchor="middle">Version Release</text>`;
+    svg += `<text x="${zeroX}" y="${mainY + 68}" class="timeline-date-label" text-anchor="middle" style="font-weight: 500;">${formatDate(versionData.date)}</text>`;
+
+    const todayX = getX(todayDiffDays);
+    svg += `<line x1="${todayX}" y1="30" x2="${todayX}" y2="${mainY + 10}" style="stroke: var(--text-secondary); stroke-width: 1.5; stroke-dasharray: 4, 4; opacity: 0.6;" />`;
+    svg += `<text x="${todayX}" y="${mainY + 85}" class="timeline-axis-label" text-anchor="middle" style="fill: var(--text-secondary); font-weight: 700;">Today</text>`;
+    svg += `<text x="${todayX}" y="${mainY + 100}" class="timeline-date-label" text-anchor="middle">${formatDate(today)}</text>`;
+
+    const tooltip = document.getElementById('gallery-custom-tooltip');
+
+    modData.forEach(mod => {
+      const y = mainY - 30 - (mod.level * collisionHeight);
+      const isToday = mod.diffDays === 0;
+
+      svg += `
+        <g class="timeline-mod-row">
+          <line x1="${mod.x}" y1="${mainY}" x2="${mod.x}" y2="${y + 16}" style="stroke: var(--accent); stroke-width: 1.5; opacity: 0.4; pointer-events: none;" />
+          <image x="${mod.x - iconSize / 2}" y="${y - iconSize / 2}" width="${iconSize}" height="${iconSize}" 
+                 href="${mod.icon_url || 'https://cdn.modrinth.com/placeholder.svg'}" 
+                 style="clip-path: inset(0 round 8px); cursor: pointer;"
+                 class="timeline-mod-icon"
+                 data-title="${mod.title}"
+                 data-date="${formatDateTime(mod.date)}"
+                 data-diff="${mod.diffDays > 0 ? '+' : ''}${mod.diffDays.toFixed(1)} days">
+          </image>
+        </g>`;
+    });
+
+    svg += '</svg>';
+    chartContainer.innerHTML = svg;
+
+    const icons = chartContainer.querySelectorAll('.timeline-mod-icon');
+    icons.forEach(icon => {
+      icon.addEventListener('mouseenter', (e) => {
+        const title = icon.getAttribute('data-title');
+        const date = icon.getAttribute('data-date');
+        const diff = icon.getAttribute('data-diff');
+
+        tooltip.innerHTML = `
+          <div style="font-weight: 700; color: var(--accent); margin-bottom: 2px;">${title}</div>
+          <div style="opacity: 0.8; font-size: 11px;">Updated: ${date}</div>
+          <div style="font-size: 11px; font-weight: 600; margin-top: 4px;">${diff} since release</div>
+        `;
+        tooltip.style.display = 'block';
+        tooltip.style.left = e.clientX + 16 + 'px';
+        tooltip.style.top = e.clientY + 16 + 'px';
+      });
+
+      icon.addEventListener('mousemove', (e) => {
+        tooltip.style.left = e.clientX + 16 + 'px';
+        tooltip.style.top = e.clientY + 16 + 'px';
+      });
+
+      icon.addEventListener('mouseleave', () => {
+        tooltip.style.display = 'none';
+      });
+    });
+  }
+
+  function truncate(str, n) {
+    return (str.length > n) ? str.slice(0, n - 1) + '...' : str;
+  }
+}
+
 async function fetchVersions() {
   try {
     const res = await fetch(`${API_BASE}/tag/game_version`);
@@ -495,9 +656,8 @@ function renderTrackedMods() {
     }
     const card = clone.querySelector('.tracked-card');
     card.addEventListener('click', (e) => {
-      // Don't open link if clicking the remove button
       if (e.target.closest('.remove-button')) return;
-      
+
       const type = project.project_type || 'mod';
       const url = `https://modrinth.com/${type}/${project.slug || project.id}`;
       window.open(url, '_blank');
@@ -603,6 +763,14 @@ function formatDate(isoString) {
   try {
     const date = new Date(isoString);
     return date.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
+  } catch (e) { return 'Unknown date'; }
+}
+
+function formatDateTime(isoString) {
+  try {
+    const date = new Date(isoString);
+    return date.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' }) + ' ' +
+      date.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' });
   } catch (e) { return 'Unknown date'; }
 }
 
