@@ -597,6 +597,21 @@ button:hover {
   border: 1px solid rgba(239, 68, 68, 0.3);
 }
 
+.summary-badges {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+@media (max-width: 600px) {
+  .summary-badges {
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 8px;
+    width: 100%;
+  }
+}
+
 .loading {
   display: inline-block;
   width: 20px;
