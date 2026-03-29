@@ -203,8 +203,14 @@
 
   <div id="timeline-modal" class="modal">
     <div class="modal-content timeline-modal-content">
-      <div class="modal-header">
-        <h2 id="timeline-title" style="margin:0;">Mod Update Timeline</h2>
+      <div class="modal-header timeline-header">
+        <div style="display: flex; flex-direction: column; gap: 4px;">
+          <h2 id="timeline-title" style="margin:0; font-size: 1.2rem;">Mod Update Timeline</h2>
+          <div class="timeline-mode-toggle">
+            <button id="timeline-mode-initial" class="mode-btn active" title="Show when support was first added">Initial Support</button>
+            <button id="timeline-mode-latest" class="mode-btn" title="Show the most recent update for this version">Latest Update</button>
+          </div>
+        </div>
         <span class="close-btn" id="close-timeline-btn">&times;</span>
       </div>
       <div id="timeline-chart-container" class="timeline-container">

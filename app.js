@@ -6,6 +6,8 @@ let targetVersion = '';
 let trackedModIds = JSON.parse(localStorage.getItem('modtracker_ids') || '[]');
 let trackedModsCache = {};
 let debounceTimer;
+let timelineMode = localStorage.getItem('modtracker_timeline_mode') || 'latest';
+let timelineCache = {};
 
 const versionSelect = document.getElementById('mc-version');
 const searchInput = document.getElementById('mod-search');
@@ -326,8 +328,49 @@ function initTimeline() {
   closeBtn.onclick = () => modal.classList.remove('active');
   window.addEventListener('click', (e) => { if (e.target === modal) modal.classList.remove('active'); });
 
-  function renderTimeline() {
-    chartContainer.innerHTML = '';
+  const modeInitial = document.getElementById('timeline-mode-initial');
+  const modeLatest = document.getElementById('timeline-mode-latest');
+
+  if (timelineMode === 'initial') {
+    modeInitial.classList.add('active');
+    modeLatest.classList.remove('active');
+  } else {
+    modeLatest.classList.add('active');
+    modeInitial.classList.remove('active');
+  }
+
+  const switchMode = (mode) => {
+    if (timelineMode === mode) return;
+    timelineMode = mode;
+    localStorage.setItem('modtracker_timeline_mode', mode);
+
+    if (mode === 'initial') {
+      modeInitial.classList.add('active');
+      modeLatest.classList.remove('active');
+    } else {
+      modeLatest.classList.add('active');
+      modeInitial.classList.remove('active');
+    }
+
+    chartContainer.style.opacity = '0';
+    setTimeout(() => {
+      renderTimeline().then(() => {
+        chartContainer.style.opacity = '1';
+      });
+    }, 150);
+  };
+
+  modeInitial.onclick = () => switchMode('initial');
+  modeLatest.onclick = () => switchMode('latest');
+
+  async function renderTimeline() {
+    const listHash = trackedModIds.slice().sort().join(',');
+    const cacheKey = `${targetVersion}_${timelineMode}_${listHash}`;
+    let modData = timelineCache[cacheKey];
+
+    if (!modData) {
+      chartContainer.innerHTML = '<div class="empty-state"><div class="loading"></div><p>Fetching version-specific update dates...</p></div>';
+    }
 
     if (trackedModIds.length === 0) {
       chartContainer.innerHTML = '<div class="empty-state">No items tracked. Search and add some content to see the timeline!</div>';
@@ -344,39 +387,82 @@ function initTimeline() {
 
     timelineTitle.textContent = `Update Timeline (${targetVersion})`;
 
-    const modData = trackedModIds.map(id => {
-      const p = trackedModsCache[id];
-      if (!p) return null;
-      if (!p.game_versions.includes(targetVersion)) return null;
+    if (!modData) {
+      const fetchModVersionDates = trackedModIds.map(async (id) => {
+        const p = trackedModsCache[id];
+        if (!p || !p.game_versions.includes(targetVersion)) return null;
 
-      const updateDate = new Date(p.updated || p.date_modified);
-      const diffMs = updateDate - releaseDate;
-      const diffDays = diffMs / (1000 * 60 * 60 * 24);
-      return { title: p.title, icon_url: p.icon_url, diffDays, date: updateDate };
-    }).filter(d => d !== null);
+        try {
+          const res = await fetch(`${API_BASE}/project/${id}/version?game_versions=["${targetVersion}"]`);
+          if (!res.ok) return null;
+          const versions = await res.json();
+          if (versions.length === 0) return null;
+
+          const targetV = timelineMode === 'initial' ? versions[versions.length - 1] : versions[0];
+          const versionDate = new Date(targetV.date_published);
+          const diffMs = versionDate - releaseDate;
+          const diffDays = diffMs / (1000 * 60 * 60 * 24);
+
+          return {
+            title: p.title,
+            icon_url: p.icon_url,
+            diffDays,
+            date: versionDate,
+            versionLabel: targetV.version_number
+          };
+        } catch (err) {
+          console.error(`Failed to fetch version date for ${p.title}:`, err);
+          return null;
+        }
+      });
+
+      modData = (await Promise.all(fetchModVersionDates)).filter(d => d !== null);
+      if (modData.length > 0) timelineCache[cacheKey] = modData;
+    }
 
     if (modData.length === 0) {
       chartContainer.innerHTML = `<div class="empty-state">None of your tracked items are updated for ${targetVersion} yet.</div>`;
       return;
     }
 
+    if (chartContainer.querySelector('.loading')) chartContainer.innerHTML = '';
+
     modData.sort((a, b) => a.diffDays - b.diffDays);
 
     const today = new Date();
-    const todayDiffDays = Math.floor((today - releaseDate) / (1000 * 60 * 60 * 24));
+    const todayDiffDays = (today - releaseDate) / (1000 * 60 * 60 * 24);
 
-    const actualMin = Math.min(0, ...modData.map(d => d.diffDays));
-    const minDay = actualMin === 0 ? 0 : actualMin - 5;
-    const maxDay = Math.max(todayDiffDays, ...modData.map(d => d.diffDays));
-    const range = maxDay - minDay || 1;
+    const midnightTodayDiff = Math.floor(todayDiffDays);
+    const allDays = [...new Set([0, midnightTodayDiff, ...modData.map(m => Math.floor(m.diffDays))])].sort((a, b) => a - b);
+    const eventDays = allDays.length > 1 ? allDays : [0, 1];
+
+    const visualDaysMap = new Map();
+    let totalVisualWidth = 0;
+    visualDaysMap.set(eventDays[0], 0);
+
+    for (let i = 1; i < eventDays.length; i++) {
+      const realGap = eventDays[i] - eventDays[i - 1];
+      const visualGap = realGap > 7 ? 4 : realGap;
+      totalVisualWidth += visualGap;
+      visualDaysMap.set(eventDays[i], totalVisualWidth);
+    }
+
+    const getVisualDay = (d) => {
+      if (visualDaysMap.has(d)) return visualDaysMap.get(d);
+      const lower = [...visualDaysMap.keys()].filter(x => x < d).pop();
+      const upper = [...visualDaysMap.keys()].filter(x => x > d).shift();
+      if (lower === undefined) return 0;
+      if (upper === undefined) return totalVisualWidth;
+      const ratio = (d - lower) / (upper - lower);
+      return visualDaysMap.get(lower) + ratio * (visualDaysMap.get(upper) - visualDaysMap.get(lower));
+    };
 
     const width = 900;
-    const chartHeight = 500;
     const paddingLeft = 60;
     const paddingRight = 60;
     const timelineWidth = width - paddingLeft - paddingRight;
 
-    const getX = (day) => paddingLeft + ((day - minDay) / range) * timelineWidth;
+    const getX = (day) => paddingLeft + (getVisualDay(day) / (totalVisualWidth || 1)) * timelineWidth;
 
     const occupiedSlots = [];
     const iconSize = 32;
@@ -400,46 +486,83 @@ function initTimeline() {
     let svg = `<svg viewBox="0 0 ${width} ${dynamicChartHeight}" class="timeline-svg" xmlns="http://www.w3.org/2000/svg">`;
 
     const mainY = dynamicChartHeight - 110;
-    svg += `<line x1="${paddingLeft}" y1="${mainY}" x2="${width - paddingRight}" y2="${mainY}" style="stroke: var(--border-glass); stroke-width: 4; stroke-linecap: round;" />`;
 
-    const stepLines = 6;
-    const stepVal = range / stepLines;
-    for (let i = 0; i <= stepLines; i++) {
-      const d = minDay + (stepVal * i);
-      const posX = getX(d);
-      svg += `<line x1="${posX}" y1="${mainY - 10}" x2="${posX}" y2="${mainY + 10}" style="stroke: var(--border-glass); stroke-width: 2;" />`;
-      svg += `<text x="${posX}" y="${mainY + 30}" class="timeline-axis-label" text-anchor="middle">${Math.round(d)}d</text>`;
+    for (let i = 1; i < eventDays.length; i++) {
+      const x1 = getX(eventDays[i - 1]);
+      const x2 = getX(eventDays[i]);
+      const isSquashed = (eventDays[i] - eventDays[i - 1] > 7);
+
+      svg += `<line x1="${x1}" y1="${mainY}" x2="${x2}" y2="${mainY}" 
+                      style="stroke: ${isSquashed ? 'var(--timeline-grid-line)' : 'var(--timeline-axis)'}; 
+                             stroke-width: 3; 
+                             ${isSquashed ? 'stroke-dasharray: 8, 4;' : ''}" />`;
     }
 
     const zeroX = getX(0);
-    svg += `<circle cx="${zeroX}" cy="${mainY}" r="8" fill="var(--accent)" />`;
-    svg += `<text x="${zeroX}" y="${mainY + 50}" class="timeline-zero-label" text-anchor="middle">Version Release</text>`;
-    svg += `<text x="${zeroX}" y="${mainY + 68}" class="timeline-date-label" text-anchor="middle" style="font-weight: 500;">${formatDate(versionData.date)}</text>`;
-
     const todayX = getX(todayDiffDays);
-    svg += `<line x1="${todayX}" y1="30" x2="${todayX}" y2="${mainY + 10}" style="stroke: var(--text-secondary); stroke-width: 1.5; stroke-dasharray: 4, 4; opacity: 0.6;" />`;
-    svg += `<text x="${todayX}" y="${mainY + 85}" class="timeline-axis-label" text-anchor="middle" style="fill: var(--text-secondary); font-weight: 700;">Today</text>`;
-    svg += `<text x="${todayX}" y="${mainY + 100}" class="timeline-date-label" text-anchor="middle">${formatDate(today)}</text>`;
+    const labeledX = [zeroX, todayX];
+    const labelSpacing = 65;
+
+    const maxDay = Math.round(todayDiffDays);
+    const tickInterval = maxDay > 150 ? 50 : (maxDay > 80 ? 20 : 10);
+
+    for (let d = 1; d <= maxDay; d++) {
+      const isInitialWeek = d <= (maxDay > 60 && timelineMode === 'initial' ? 0 : 7);
+      const isInterval = (d % tickInterval === 0);
+
+      if (isInitialWeek || isInterval) {
+        const posX = getX(d);
+        if (labeledX.some(lx => Math.abs(posX - lx) < labelSpacing)) continue;
+
+        svg += `<line x1="${posX}" y1="${mainY - 5}" x2="${posX}" y2="${mainY + 5}" style="stroke: var(--timeline-grid-line); stroke-width: 1.5;" />`;
+        svg += `<text x="${posX}" y="${mainY + 30}" class="timeline-axis-label" text-anchor="middle" style="font-size: 10px; opacity: 0.8;">${d}d</text>`;
+        const dateObj = new Date(releaseDate.getTime() + d * 24 * 60 * 60 * 1000);
+        svg += `<text x="${posX}" y="${mainY + 45}" class="timeline-date-label" text-anchor="middle" style="font-size: 9px; opacity: 0.6;">${formatDate(dateObj)}</text>`;
+        labeledX.push(posX);
+      }
+    }
+
+    modData.forEach(m => {
+      const posX = getX(m.diffDays);
+      if (Math.abs(posX - getX(0)) > 5 && Math.abs(posX - getX(todayDiffDays)) > 5) {
+        if (m.diffDays < -0.5) {
+          if (!labeledX.some(lx => Math.abs(posX - lx) < labelSpacing)) {
+            svg += `<text x="${posX}" y="${mainY + 30}" class="timeline-axis-label" text-anchor="middle" style="font-size: 10px; font-weight: 600; opacity: 0.8;">${Math.round(m.diffDays)}d</text>`;
+            const dateObj = new Date(releaseDate.getTime() + m.diffDays * 24 * 60 * 60 * 1000);
+            svg += `<text x="${posX}" y="${mainY + 45}" class="timeline-date-label" text-anchor="middle" style="font-size: 9px; opacity: 0.7;">${formatDate(dateObj)}</text>`;
+            labeledX.push(posX);
+          }
+        }
+      }
+    });
 
     const tooltip = document.getElementById('gallery-custom-tooltip');
 
-    modData.forEach(mod => {
+    modData.forEach((mod, i) => {
       const y = mainY - 30 - (mod.level * collisionHeight);
-      const isToday = mod.diffDays === 0;
 
       svg += `
-        <g class="timeline-mod-row">
+        <g class="timeline-mod-row" style="opacity: 0; animation: timelineFadeIn 0.3s cubic-bezier(0.4, 0, 0.2, 1) ${i * 0.03}s forwards;">
           <line x1="${mod.x}" y1="${mainY}" x2="${mod.x}" y2="${y + 16}" style="stroke: var(--accent); stroke-width: 1.5; opacity: 0.4; pointer-events: none;" />
           <image x="${mod.x - iconSize / 2}" y="${y - iconSize / 2}" width="${iconSize}" height="${iconSize}" 
                  href="${mod.icon_url || 'https://cdn.modrinth.com/placeholder.svg'}" 
                  style="clip-path: inset(0 round 8px); cursor: pointer;"
                  class="timeline-mod-icon"
                  data-title="${mod.title}"
+                 data-version="${mod.versionLabel}"
                  data-date="${formatDateTime(mod.date)}"
                  data-diff="${mod.diffDays > 0 ? '+' : ''}${mod.diffDays.toFixed(1)} days">
           </image>
         </g>`;
     });
+
+    svg += `<circle cx="${zeroX}" cy="${mainY}" r="8" fill="var(--accent)" />`;
+    svg += `<text x="${zeroX}" y="${mainY + 30}" class="timeline-axis-label" text-anchor="middle" style="font-weight: 700; fill: var(--accent);">Release</text>`;
+    svg += `<text x="${zeroX}" y="${mainY + 45}" class="timeline-date-label" text-anchor="middle" style="font-weight: 500;">${formatDate(versionData.date)}</text>`;
+
+    svg += `<line x1="${todayX}" y1="30" x2="${todayX}" y2="${mainY + 10}" style="stroke: var(--timeline-grid-line); stroke-width: 1.5; stroke-dasharray: 4, 4;" />`;
+    svg += `<text x="${todayX}" y="${mainY + 30}" class="timeline-axis-label" text-anchor="middle" style="fill: var(--timeline-grid-line); font-weight: 700;">Today</text>`;
+    svg += `<text x="${todayX}" y="${mainY + 45}" class="timeline-date-label" text-anchor="middle" style="fill: var(--text-secondary); opacity: 0.8;">${formatDate(today)}</text>`;
 
     svg += '</svg>';
     chartContainer.innerHTML = svg;
@@ -448,11 +571,12 @@ function initTimeline() {
     icons.forEach(icon => {
       icon.addEventListener('mouseenter', (e) => {
         const title = icon.getAttribute('data-title');
+        const version = icon.getAttribute('data-version');
         const date = icon.getAttribute('data-date');
         const diff = icon.getAttribute('data-diff');
 
         tooltip.innerHTML = `
-          <div style="font-weight: 700; color: var(--accent); margin-bottom: 2px;">${title}</div>
+          <div style="font-weight: 700; color: var(--accent); margin-bottom: 2px;">${title} <span style="font-size: 10px; opacity: 0.6;">v${version}</span></div>
           <div style="opacity: 0.8; font-size: 11px;">Updated: ${date}</div>
           <div style="font-size: 11px; font-weight: 600; margin-top: 4px;">${diff} since release</div>
         `;
