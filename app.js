@@ -799,11 +799,11 @@ function renderTrackedMods() {
 
 function updateSummary(ready, total) {
   if (total === 0) {
-    statusSummary.textContent = '0 / 0 Updated';
+    statusSummary.innerHTML = '0 / 0 <span class="mobile-hide">Updated</span>';
     statusSummary.className = 'status-summary';
     return;
   }
-  statusSummary.textContent = `${ready} / ${total} Updated`;
+  statusSummary.innerHTML = `${ready} / ${total} <span class="mobile-hide">Updated</span>`;
   if (ready === total) {
     statusSummary.className = 'status-summary all-ready';
   } else {

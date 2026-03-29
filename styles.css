@@ -668,6 +668,17 @@ footer.glass-panel {
   border-color: var(--accent);
 }
 
+@media (max-width: 600px) {
+  .mobile-hide {
+    display: none !important;
+  }
+  .footer-btn {
+    padding: 0.5rem;
+    aspect-ratio: 1;
+    justify-content: center;
+  }
+}
+
 .modal {
   display: none;
   position: fixed;
