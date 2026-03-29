@@ -131,15 +131,14 @@ body.has-custom-bg .version-label {
   display: flex;
   flex-direction: column;
   height: 100vh;
-  gap: 1.5rem;
+  gap: 1rem;
 }
 
 header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding-bottom: 2rem;
-  border-bottom: 1px solid var(--border-glass);
+  padding-bottom: 1rem;
   flex-wrap: wrap;
   gap: 1rem;
 }
@@ -235,12 +234,12 @@ select option {
   background: var(--surface-glass);
   border: 1px solid var(--border-glass);
   border-radius: 12px;
-  padding: 1.25rem;
+  padding: 1rem;
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
   display: flex;
   flex-direction: column;
-  gap: 1.25rem;
+  gap: 1rem;
   box-shadow: 0 4px 32px rgba(0, 0, 0, 0.3);
 }
 
@@ -274,7 +273,7 @@ select option {
   background: var(--surface-glass);
   border: 1px solid var(--border-glass);
   border-radius: 8px;
-  padding: 0.875rem 1rem 0.875rem 3rem;
+  padding: 0.75rem 1rem 0.75rem 3rem;
   color: var(--text-primary);
   font-family: inherit;
   font-size: 1rem;
@@ -291,7 +290,7 @@ select option {
 .tracked-list {
   display: flex;
   flex-direction: column;
-  gap: 0.75rem;
+  gap: 0.5rem;
   overflow-y: auto;
   flex: 1;
   min-height: 0;
@@ -320,7 +319,7 @@ select option {
 .tracked-card {
   display: flex;
   align-items: center;
-  padding: 0.75rem;
+  padding: 0.6rem;
   background: var(--surface-glass);
   border: 1px solid var(--border-glass);
   border-radius: 10px;
