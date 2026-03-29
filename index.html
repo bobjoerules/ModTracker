@@ -61,6 +61,7 @@
 
       if (bgImg && bgImg !== 'null') {
         const style = document.createElement('style');
+        style.id = 'initial-bg-style';
         style.innerHTML = `
           body { 
             background-image: url("${bgImg}") !important;

@@ -81,7 +81,6 @@ body {
   line-height: 1.5;
 }
 
-/* Background definitions */
 .background-decor-blobs {
   display: none;
 }
@@ -266,7 +265,6 @@ select option {
   color: var(--text-primary);
 }
 
-/* Search Section */
 .search-box {
   position: relative;
   display: flex;
@@ -309,7 +307,6 @@ select option {
   padding: 0 0.5rem;
 }
 
-/* Scrollbar customization */
 .results-container::-webkit-scrollbar,
 .tracked-list::-webkit-scrollbar {
   width: 6px;
@@ -326,7 +323,6 @@ select option {
   border-radius: 10px;
 }
 
-/* Cards */
 .mod-card,
 .tracked-card {
   display: flex;
@@ -391,7 +387,7 @@ select option {
   white-space: nowrap;
 }
 
-.mod-meta-row > *:not(:first-child)::before {
+.mod-meta-row>*:not(:first-child)::before {
   content: '•';
   margin-right: 8px;
   color: var(--text-secondary);
@@ -528,7 +524,6 @@ button:hover {
   border: 1px solid rgba(239, 68, 68, 0.3);
 }
 
-/* Loading state */
 .loading {
   display: inline-block;
   width: 20px;
@@ -539,7 +534,6 @@ button:hover {
   animation: spin 1s linear infinite;
 }
 
-/* Empty state/Loading containers */
 .empty-state {
   display: flex;
   flex-direction: column;

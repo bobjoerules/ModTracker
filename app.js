@@ -224,6 +224,8 @@ function initBackgroundGallery() {
     randomToggle.classList.remove('active');
 
     if (!src) {
+      const initialStyle = document.getElementById('initial-bg-style');
+      if (initialStyle) initialStyle.remove();
       document.body.style.backgroundImage = '';
       document.body.classList.remove('has-custom-bg', 'tiled', 'pixelated-bg');
       localStorage.removeItem('custom-bg-image');
@@ -237,6 +239,8 @@ function initBackgroundGallery() {
   }
 
   function applyBackground(src, tiled, pixelated) {
+    const initialStyle = document.getElementById('initial-bg-style');
+    if (initialStyle) initialStyle.remove();
     document.body.style.backgroundImage = `url("${src}")`;
     document.body.classList.add('has-custom-bg');
     document.body.classList.toggle('tiled', tiled === true || tiled === 'true');
@@ -268,6 +272,9 @@ function initBackgroundGallery() {
       localStorage.setItem('custom-bg-image', choice.s);
       localStorage.setItem('custom-bg-tiled', choice.tiled);
       localStorage.setItem('custom-bg-pixelated', choice.pixelated);
+    } else {
+      document.body.style.backgroundImage = '';
+      document.body.classList.remove('has-custom-bg', 'tiled', 'pixelated-bg');
     }
   }
 
@@ -404,6 +411,14 @@ function renderSearchResults(hits) {
     clone.querySelector('.mod-author').textContent = hit.author;
     clone.querySelector('.mod-type').textContent = typeLabel;
     clone.querySelector('.mod-stats').textContent = `${downloads} downloads`;
+    const card = clone.querySelector('.mod-card');
+    card.addEventListener('click', (e) => {
+      if (e.target.closest('.add-button')) return;
+      const type = hit.project_type || 'mod';
+      const url = `https://modrinth.com/${type}/${hit.slug || hit.project_id}`;
+      window.open(url, '_blank');
+    });
+
     const btn = clone.querySelector('.add-button');
     if (trackedModIds.includes(hit.project_id)) {
       btn.innerHTML = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"></polyline></svg>';
@@ -411,7 +426,10 @@ function renderSearchResults(hits) {
       btn.disabled = true;
       btn.title = 'Already tracked';
     } else {
-      btn.addEventListener('click', () => addTrackedMod(hit.project_id, hit));
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        addTrackedMod(hit.project_id, hit);
+      });
     }
     searchResultsContainer.appendChild(clone);
   });
@@ -475,8 +493,21 @@ function renderTrackedMods() {
     if (modDate) {
       clone.querySelector('.mod-date').textContent = `Updated: ${formatDate(modDate)}`;
     }
+    const card = clone.querySelector('.tracked-card');
+    card.addEventListener('click', (e) => {
+      // Don't open link if clicking the remove button
+      if (e.target.closest('.remove-button')) return;
+      
+      const type = project.project_type || 'mod';
+      const url = `https://modrinth.com/${type}/${project.slug || project.id}`;
+      window.open(url, '_blank');
+    });
+
     const btn = clone.querySelector('.remove-button');
-    btn.addEventListener('click', () => removeTrackedMod(id));
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      removeTrackedMod(id);
+    });
     trackedListContainer.appendChild(clone);
   });
   updateSummary(readyCount, trackedModIds.length);
