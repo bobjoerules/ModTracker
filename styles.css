@@ -385,7 +385,6 @@ select option {
 .mod-author,
 .mod-stats,
 .mod-type,
-.mod-versions,
 .mod-date {
   font-size: 0.8rem;
   color: var(--text-secondary);

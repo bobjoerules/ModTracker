@@ -438,7 +438,7 @@ function renderTrackedMods() {
       badge.textContent = 'Waiting';
       badge.classList.add('badge-waiting');
     }
-    clone.querySelector('.mod-versions').textContent = isCompatible ? `Supports ${targetVersion}` : `Not yet on ${targetVersion}`;
+
     const modDate = project.updated || project.date_modified;
     if (modDate) {
       clone.querySelector('.mod-date').textContent = `Updated: ${formatDate(modDate)}`;
