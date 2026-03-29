@@ -1,14 +1,12 @@
 const API_BASE = 'https://api.modrinth.com/v2';
 const DEBOUNCE_MS = 300;
 
-// State
 let mcVersions = [];
 let targetVersion = '';
 let trackedModIds = JSON.parse(localStorage.getItem('modtracker_ids') || '[]');
-let trackedModsCache = {}; // id -> data
+let trackedModsCache = {};
 let debounceTimer;
 
-// DOM Elements
 const versionSelect = document.getElementById('mc-version');
 const searchInput = document.getElementById('mod-search');
 const searchResultsContainer = document.getElementById('search-results');
@@ -18,7 +16,6 @@ const optimalVersionEl = document.getElementById('optimal-version');
 const searchTemplate = document.getElementById('search-result-template');
 const trackedTemplate = document.getElementById('tracked-mod-template');
 
-// Initialize
 async function init() {
   await fetchVersions();
 
@@ -28,7 +25,6 @@ async function init() {
     renderTrackedMods();
   }
 
-  // Event Listeners
   versionSelect.addEventListener('change', (e) => {
     targetVersion = e.target.value;
     localStorage.setItem('modtracker_version', targetVersion);
@@ -110,7 +106,6 @@ function initBackgroundGallery() {
     noneItem.onmouseleave = () => tooltip.style.display = 'none';
     galleryGrid.appendChild(noneItem);
 
-    // Section Headers and Category Rendering
     const categories = [
       { id: 'wallpapers', title: 'Wallpapers', images: typeof BACKGROUND_IMAGES !== 'undefined' ? BACKGROUND_IMAGES.map(s => ({ s, tiled: false, pixelated: false })) : [] },
       { id: 'paintings', title: 'Paintings', images: typeof PAINTING_IMAGES !== 'undefined' ? PAINTING_IMAGES.map(s => ({ s, tiled: false, pixelated: true })) : [] },
@@ -163,7 +158,7 @@ function initBackgroundGallery() {
 
     img.onclick = () => {
       setBackground(src, tiled, pixelated);
-      renderGallery(); // Re-render to update active indicator
+      renderGallery();
     };
     galleryGrid.appendChild(img);
   }
@@ -192,7 +187,6 @@ function initBackgroundGallery() {
     document.body.classList.toggle('pixelated-bg', pixelated === true || pixelated === 'true');
   }
 
-  // Random toggle
   const isRandom = localStorage.getItem('custom-bg-random') !== 'false';
   if (isRandom) randomToggle.classList.add('active');
 
@@ -203,7 +197,6 @@ function initBackgroundGallery() {
     randomToggle.classList.toggle('active', newState);
   };
 
-  // Filters
   ['wallpapers', 'paintings', 'blocks'].forEach(key => {
     const btn = document.getElementById(`filter-${key}`);
     const active = localStorage.getItem(`custom-bg-include-${key}`) !== 'false';
@@ -235,13 +228,12 @@ async function fetchVersions() {
     const data = await res.json();
 
     const releasesOnly = data.filter(v => v.version_type === 'release');
-    mcVersions = releasesOnly; // Set for optimal version logic
+    mcVersions = releasesOnly;
     versionSelect.innerHTML = '';
 
     const savedVersion = localStorage.getItem('modtracker_version');
     targetVersion = savedVersion && releasesOnly.some(v => v.version === savedVersion) ? savedVersion : (releasesOnly[0] ? releasesOnly[0].version : '');
 
-    // limit to latest 100
     const limitedVersions = releasesOnly.slice(0, 100);
 
     for (const v of limitedVersions) {
@@ -307,7 +299,6 @@ async function refreshTrackedMods() {
   }
 }
 
-// Rendering
 function renderSearchResults(hits) {
   searchResultsContainer.innerHTML = '';
   if (hits.length === 0) {

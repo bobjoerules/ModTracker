@@ -4,14 +4,16 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>ModTracker - Modrinth Update Tracker</title>
+  <title>Mod Game Version Support Tracker</title>
   <link rel="stylesheet" href="styles.css">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="apple-touch-icon" sizes="180x180" href="./icons/apple-touch-icon.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="./icons/favicon-32x32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="./icons/favicon-16x16.png">
   <script src="backgrounds.js"></script>
   <script>
-    // 1. Theme Logic
     (function () {
       const savedTheme = localStorage.getItem("tswitch-theme");
       if (savedTheme) {
@@ -21,7 +23,6 @@
         document.documentElement.dataset.theme = prefersDark ? 'wither' : 'snow';
       }
 
-      // 2. Background Logic (Random on Reload)
       const isRandom = localStorage.getItem('custom-bg-random') !== 'false';
       let bgImg = localStorage.getItem('custom-bg-image');
       let isTiled = localStorage.getItem('custom-bg-tiled') === 'true';
@@ -66,7 +67,6 @@
           body.has-custom-bg { display: block; } 
         `;
         document.head.appendChild(style);
-        // We'll add the classes in a script that runs as soon as body exists
         const observer = new MutationObserver(() => {
           if (document.body) {
             document.body.classList.add('has-custom-bg');
@@ -99,7 +99,6 @@
     </header>
 
     <main class="content-grid">
-      <!-- Search Column -->
       <section class="glass-panel">
         <div style="display: flex; justify-content: space-between; align-items: center;">
           <h2>Find Mods</h2>
@@ -118,7 +117,6 @@
         </div>
       </section>
 
-      <!-- Tracking Column -->
       <section class="glass-panel">
         <div style="display: flex; justify-content: space-between; align-items: center;">
           <h2>Tracked Mods</h2>
@@ -173,7 +171,6 @@
         <span class="close-btn" id="close-gallery-btn">&times;</span>
       </div>
       <div class="gallery-grid" id="gallery-grid">
-        <!-- Backgrounds populated by backgrounds.js -->
       </div>
       <div class="gallery-footer"
         style="display: flex; justify-content: space-between; align-items: center; padding: 15px 25px;">
@@ -220,7 +217,6 @@
 
   <div id="gallery-custom-tooltip"></div>
 
-  <!-- Templates -->
   <template id="search-result-template">
     <div class="mod-card">
       <img class="mod-icon" src="" alt="">
