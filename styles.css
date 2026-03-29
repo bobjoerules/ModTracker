@@ -191,6 +191,24 @@ header {
   transition: var(--transition);
 }
 
+.mod-card {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-glass);
+  border-radius: 12px;
+  padding: 1rem;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  transition: var(--transition);
+}
+
+@media (max-width: 600px) {
+  .mod-card, .tracked-card {
+    padding: 0.75rem;
+    gap: 0.75rem;
+  }
+}
+
 .select-wrapper:hover {
   background: color-mix(in srgb, var(--modal-surface) 80%, transparent);
   border-color: var(--accent);
@@ -300,6 +318,24 @@ select option {
   font-size: 1.25rem;
   font-weight: 600;
   color: var(--text-primary);
+}
+
+.mod-title {
+  font-size: 1.05rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 0.15rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 300px;
+}
+
+@media (max-width: 600px) {
+  .mod-title {
+    font-size: 1rem;
+    max-width: 150px;
+  }
 }
 
 .search-box {
