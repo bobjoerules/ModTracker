@@ -306,7 +306,7 @@ select option {
   overflow-y: auto;
   flex: 1;
   min-height: 0;
-  padding-right: 0.5rem;
+  padding: 0 0.5rem;
 }
 
 /* Scrollbar customization */
