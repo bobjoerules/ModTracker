@@ -240,6 +240,7 @@ select option {
   -webkit-backdrop-filter: blur(8px);
   display: flex;
   flex-direction: column;
+  gap: 1.25rem;
   box-shadow: 0 4px 32px rgba(0, 0, 0, 0.3);
 }
 
@@ -251,7 +252,6 @@ select option {
 .glass-panel h2 {
   font-size: 1.25rem;
   font-weight: 600;
-  margin-bottom: 0.5rem;
   color: var(--text-primary);
 }
 
@@ -372,11 +372,24 @@ select option {
 }
 
 .mod-author,
+.mod-type,
 .mod-versions,
 .mod-date {
   font-size: 0.8rem;
   color: var(--text-secondary);
   white-space: nowrap;
+}
+
+.mod-type {
+  color: var(--accent);
+  font-weight: 600;
+}
+
+.mod-versions::before {
+  content: '•';
+  margin-right: 12px;
+  opacity: 0.5;
+  font-style: normal;
 }
 
 .mod-meta-row {

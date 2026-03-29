@@ -263,7 +263,7 @@ async function fetchVersions() {
 
 async function performSearch(query) {
   try {
-    const facets = encodeURIComponent(JSON.stringify([["project_type:mod"]]));
+    const facets = encodeURIComponent(JSON.stringify([["project_type:mod", "project_type:datapack"]]));
     const res = await fetch(`${API_BASE}/search?query=${encodeURIComponent(query)}&facets=${facets}&limit=10`);
     if (!res.ok) throw new Error('Search failed');
     const data = await res.json();
@@ -302,7 +302,7 @@ async function refreshTrackedMods() {
 function renderSearchResults(hits) {
   searchResultsContainer.innerHTML = '';
   if (hits.length === 0) {
-    searchResultsContainer.innerHTML = '<div class="empty-state">No mods found</div>';
+    searchResultsContainer.innerHTML = '<div class="empty-state">No results found</div>';
     return;
   }
   hits.forEach(hit => {
@@ -311,7 +311,7 @@ function renderSearchResults(hits) {
     img.src = hit.icon_url || 'https://cdn.modrinth.com/placeholder.svg';
     img.alt = hit.title;
     clone.querySelector('.mod-title').textContent = hit.title;
-    clone.querySelector('.mod-author').textContent = hit.author;
+    clone.querySelector('.mod-author').textContent = `${hit.author} • ${hit.project_type.charAt(0).toUpperCase() + hit.project_type.slice(1)}`;
     const btn = clone.querySelector('.add-button');
     if (trackedModIds.includes(hit.project_id)) {
       btn.innerHTML = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"></polyline></svg>';
@@ -328,7 +328,7 @@ function renderSearchResults(hits) {
 function renderTrackedMods() {
   trackedListContainer.innerHTML = '';
   if (trackedModIds.length === 0) {
-    trackedListContainer.innerHTML = '<div class="empty-state">No mods tracked yet. Search and add some!</div>';
+    trackedListContainer.innerHTML = '<div class="empty-state">No content tracked yet. Search and add some!</div>';
     updateSummary(0, 0);
     return;
   }
@@ -340,6 +340,8 @@ function renderTrackedMods() {
     const img = clone.querySelector('.mod-icon');
     img.src = project.icon_url || 'https://cdn.modrinth.com/placeholder.svg';
     clone.querySelector('.mod-title').textContent = project.title;
+    const typeLabel = project.project_type.charAt(0).toUpperCase() + project.project_type.slice(1);
+    clone.querySelector('.mod-type').textContent = typeLabel;
     const isCompatible = project.game_versions.includes(targetVersion);
     const badge = clone.querySelector('.status-badge');
     if (isCompatible) {
@@ -381,7 +383,7 @@ function updateSummary(ready, total) {
 function updateOptimalVersion() {
   const common = findHighestCommonVersion();
   if (common) {
-    optimalVersionEl.innerHTML = `All mods work on: <span class="version-link">${common}</span>`;
+    optimalVersionEl.innerHTML = `All items work on: <span class="version-link">${common}</span>`;
     optimalVersionEl.classList.add('visible');
     const link = optimalVersionEl.querySelector('.version-link');
     link.addEventListener('click', () => {
@@ -391,7 +393,7 @@ function updateOptimalVersion() {
       renderTrackedMods();
     });
   } else if (trackedModIds.length > 1) {
-    optimalVersionEl.textContent = 'No single version supports all mods';
+    optimalVersionEl.textContent = 'No single version supports all items';
     optimalVersionEl.classList.add('visible');
   } else {
     optimalVersionEl.classList.remove('visible');
