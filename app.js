@@ -421,7 +421,7 @@ function initTimeline() {
     }
 
     if (modData.length === 0) {
-      chartContainer.innerHTML = `<div class="empty-state">None of your tracked items are updated for ${targetVersion} yet.</div>`;
+      chartContainer.innerHTML = `<div class="empty-state">None of your tracked mods & datapacks are updated for ${targetVersion} yet.</div>`;
       return;
     }
 
@@ -806,7 +806,6 @@ function updateSummary(ready, total) {
   statusSummary.textContent = `${ready} / ${total} Updated`;
   if (ready === total) {
     statusSummary.className = 'status-summary all-ready';
-    statusSummary.textContent += ' 🎉';
   } else {
     statusSummary.className = 'status-summary';
   }
@@ -816,7 +815,7 @@ function updateSummary(ready, total) {
 function updateOptimalVersion() {
   const common = findHighestCommonVersion();
   if (common) {
-    optimalVersionEl.innerHTML = `All items work on: <span class="version-link">${common}</span>`;
+    optimalVersionEl.innerHTML = `All work on: <span class="version-link">${common}</span>`;
     optimalVersionEl.classList.add('visible');
     const link = optimalVersionEl.querySelector('.version-link');
     link.addEventListener('click', () => {
@@ -826,7 +825,7 @@ function updateOptimalVersion() {
       renderTrackedMods();
     });
   } else if (trackedModIds.length > 1) {
-    optimalVersionEl.textContent = 'No single version supports all items';
+    optimalVersionEl.textContent = 'No single version supports all';
     optimalVersionEl.classList.add('visible');
   } else {
     optimalVersionEl.classList.remove('visible');
