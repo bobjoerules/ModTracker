@@ -825,17 +825,17 @@ footer.glass-panel {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  background-color: var(--bg-secondary) !important;
-  color: var(--text-primary) !important;
-  border: 2px solid var(--scroll-track);
-  border-radius: 6px;
-  font-weight: bold;
   position: relative;
   overflow: hidden;
-  aspect-ratio: 16 / 9;
-  z-index: 10;
+  background-color: var(--surface-glass) !important;
+  color: #ffffff !important;
+  border: 4px solid var(--border-glass);
+  border-radius: 6px;
   cursor: pointer;
+  aspect-ratio: 16 / 9;
+  font-weight: 600;
   transition: transform 0.2s, border-color 0.2s;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
 }
 
 @media (min-width: 601px) {
@@ -907,13 +907,11 @@ footer.glass-panel {
 
 .gallery-section-title {
   grid-column: 1 / -1;
-  font-size: 0.9rem;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  color: var(--accent);
-  margin: 1.5rem 0 0.75rem 0;
-  opacity: 0.8;
+  font-size: 1rem;
+  font-weight: 600;
+  color: #ffffff;
+  margin: 1.5rem 0 0.5rem 0;
+  opacity: 1;
 }
 
 .gallery-section-title:first-child {

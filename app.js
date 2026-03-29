@@ -166,14 +166,18 @@ function initBackgroundGallery() {
       { id: 'blocks', title: 'Blocks', images: typeof BLOCK_IMAGES !== 'undefined' ? BLOCK_IMAGES.map(s => ({ s, tiled: true, pixelated: true })) : [] }
     ];
 
+    let categoryCounter = 0;
     categories.forEach(cat => {
       const isActive = localStorage.getItem(`custom-bg-include-${cat.id}`) !== 'false';
       if (!isActive || cat.images.length === 0) return;
 
-      const header = document.createElement('div');
-      header.className = 'gallery-section-title';
-      header.textContent = cat.title;
-      galleryGrid.appendChild(header);
+      if (categoryCounter > 0) {
+        const header = document.createElement('div');
+        header.className = 'gallery-section-title';
+        header.textContent = cat.title;
+        galleryGrid.appendChild(header);
+      }
+      categoryCounter++;
 
       cat.images.forEach(imgData => {
         addGalleryItem(imgData.s, imgData.tiled, imgData.pixelated, currentBg);
